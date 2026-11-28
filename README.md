@@ -25,7 +25,27 @@ If your register has title rows, or column names the script does not recognise, 
 
 The page runs on your own computer only (it listens on 127.0.0.1, nothing goes to the internet). Your file is copied to a temporary folder, checked, and the copy is deleted right after. Stop the program with Ctrl+C in its window.
 
-Run the tests: `python -m unittest discover -s tests` (38 tests).
+Run the tests: `python -m unittest discover -s tests` (56 tests).
+
+## Formula check (offline, optional)
+
+Add `--formulas` to also audit the formulas: `python healthcheck.py book.xlsx --formulas`. In the simple screen it is a checkbox, on by default. It reads the formulas and the values Excel saved, never changes your file, and adds the findings to the same report (same Issues sheet). To try it, run `python make_formula_sample.py` (it builds `sample/dummy_formulas.xlsx` with deliberate problems), open and save that file once in Excel so the results are stored, then run `python healthcheck.py sample/dummy_formulas.xlsx --formulas`.
+
+| Check | Severity |
+|---|---|
+| Cell shows an error (#DIV/0!, #N/A, #VALUE!, #NAME?, #REF!, ...) | High |
+| Formula contains #REF! or divides by a literal 0 | High |
+| Formula points to a sheet that is not in the file | High |
+| Formula refers to its own cell | High |
+| Typed number sitting between formulas in a column | High |
+| SUM/AVERAGE/COUNT/MIN/MAX range stops one row short of a number | Medium |
+| Numbers saved as text inside a SUM/AVERAGE range | Medium |
+| Formula differs from the matching formulas above and below | Medium |
+| Link to another workbook | Medium |
+| Reference to an empty cell | Low |
+| INDIRECT, OFFSET, TODAY, NOW, RAND (recalculate on every change) | Info |
+
+Limits of the formula check: it cannot recalculate, so it cannot prove a formula gives the right number; it relies on the values Excel saved (a file never opened in Excel shows a warning). Circular references are found only when a formula includes its own cell, not longer loops. Named ranges, array formulas and other sheets' layouts are not analysed. Findings are leads to review.
 
 ## What it checks
 
@@ -69,6 +89,14 @@ Columns are found from header words in English or Arabic (for example Date / ت�
 كل تقرير فيه علامة رمادية خفيفة باسم Hussein Abdallah (في شيت Summary وشيت Issues وتذييل الطباعة). العلامة بتوضح مين عمل الأداة، لكنها نص عادي جوه الملف وأي حد يقدر يمسحها، ومش بتقفل الملف ولا بتحميه.
 
 **تنبيه مهم:** الريجسترات الحقيقية فيها أسماء ناس وبيانات شركة. شغّل السكريبت على جهازك بس، وما ترفعش ملف حقيقي ولا تقرير منه على GitHub. المثال هنا كله بيانات وهمية.
+
+## فحص المعادلات (أوفلاين، اختياري)
+
+زوّد `--formulas` لو عايز يفحص المعادلات كمان: `python healthcheck.py book.xlsx --formulas`. في الشاشة البسيطة هو مربع اختيار شغال تلقائيًا. بيقرأ المعادلات والقيم اللي Excel حافظها، ومش بيغيّر ملفك، وبيضيف الملاحظات في نفس التقرير (شيت Issues). للتجربة شغّل `python make_formula_sample.py` (بيبني `sample/dummy_formulas.xlsx` فيه مشاكل متعمدة)، وافتحه واحفظه مرة في Excel عشان النتائج تتخزن، وبعدين شغّل `python healthcheck.py sample/dummy_formulas.xlsx --formulas`. .
+
+بيلاقي: خلايا فيها أخطاء (#DIV/0! و#N/A و#VALUE! و#NAME? و#REF!)، معادلة فيها #REF! أو قسمة على صفر، إشارة لشيت مش موجود، معادلة بتشاور على خليتها هي، رقم مكتوب بإيدك وسط معادلات في العمود، نطاق SUM وغيره بيقف قبل صف فيه رقم، أرقام مكتوبة كنص جوه النطاق، معادلة مختلفة عن اللي فوقها وتحتها، رابط لملف تاني، إشارة لخلية فاضية، ودوال بتتغير مع كل حساب (TODAY وNOW وغيرها).
+
+حدود الفحص: الأداة مش بتعيد حساب المعادلات، فمش بتثبت إن الناتج صح رقميًا، وبتعتمد على القيم اللي Excel حافظها (لو الملف عمره ما اتفتح في Excel هتظهر تحذير). الدوائر المقفولة بتتلقط بس لو المعادلة فيها خليتها هي، مش الدورات الأطول. والنتيجة ملاحظات للمراجعة مش قرارات نهائية.
 
 ## Limits
 

@@ -26,6 +26,7 @@ import re
 import sys
 from collections import defaultdict
 
+import formulacheck
 from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import column_index_from_string, get_column_letter
@@ -490,6 +491,9 @@ def main(argv=None):
                     help="row number of the column headers (default: detect). Needs --sheet.")
     ap.add_argument("--role", action="append", default=[], metavar="COL=ROLE",
                     help="set a column role, e.g. B=name, F=expiry (roles: %s). Needs --sheet." % ", ".join(ROLE_NAMES))
+    ap.add_argument("--formulas", action="store_true",
+                    help="also audit formulas: error values, broken references, inconsistent formulas, "
+                         "hardcoded numbers, short ranges, external links")
     ap.add_argument("--out", default=None, help="report path (default: next to the input)")
     ap.add_argument("--force", action="store_true", help="overwrite an existing report")
     a = ap.parse_args(argv)
@@ -537,15 +541,17 @@ def main(argv=None):
         return fail("row %d has no headers (it is empty)" % a.header_row)
     allissues, stats = [], []
     for ws in sheets:
-        if ws.max_row < 2:
+        if ws.max_row < 2 and not a.formulas:
             continue
-        ck = Checker(ws, cfg)
-        iss = ck.run()
+        ck = Checker(ws, cfg) if ws.max_row >= 2 else None
+        iss = ck.run() if ck else []
+        if a.formulas:
+            iss += formulacheck.audit_sheet(wbf[ws.title], ws, wbf.sheetnames)
         allissues += iss
         cnt = defaultdict(int)
         for i in iss:
             cnt[i["Severity"]] += 1
-        stats.append({"sheet": ws.title, "rows": len(ck.rows), "total": len(iss),
+        stats.append({"sheet": ws.title, "rows": len(ck.rows) if ck else 0, "total": len(iss),
                       "High": cnt["High"], "Medium": cnt["Medium"],
                       "Low": cnt["Low"], "Info": cnt["Info"],
                       "uncalculated": count_uncalculated(wbf[ws.title], ws)})
