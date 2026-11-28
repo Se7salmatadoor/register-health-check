@@ -93,6 +93,7 @@ def form(message=""):
 </div>
 <label>شيت واحد بس (اختياري، اكتب اسمه بالظبط، وللضبط اليدوي بتختاره في الخطوة الجاية)</label>
 <input type='text' name='sheet' placeholder='سيبه فاضي لفحص كل الشيتات'>
+<label><input type='checkbox' name='formulas' value='1' checked> افحص المعادلات كمان (أخطاء، مراجع مكسورة، صيغ مش متناسقة، أرقام مكتوبة مكان معادلة، نطاقات ناقصة)</label>
 <label><input type='checkbox' name='month_first' value='1'> التواريخ المكتوبة كنص بالشهر الأول (03/04/2026 = 4 مارس)</label>
 <p><button type='submit' name='action' value='run'>2) افحص مباشرة (تلقائي)</button> <button type='submit' name='action' value='preview' class='btn2'>أو: اضبط صف العناوين والأعمدة بنفسي</button></p>
 </form>
@@ -173,6 +174,8 @@ def base_argv(src, out, fields):
         pass
     if fields.get("month_first"):
         argv += ["--month-first"]
+    if fields.get("formulas"):
+        argv += ["--formulas"]
     return argv
 
 
